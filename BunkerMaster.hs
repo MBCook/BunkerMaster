@@ -105,7 +105,7 @@ bugCrossable Reliable	= True
 bugCrossable _			= False
 
 -- Figure out if the humans can walk on a square
-humanCrossable	Reliable	= True
+humanCrossable	Reliable	= True					-- This is causing problems, humans can get boxed in by +s
 humanCrossable _			= False
 
 -- Convenience functions to find locations
