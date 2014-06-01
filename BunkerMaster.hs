@@ -169,12 +169,12 @@ updateTerrainRow f toUpdate t y = foldl helper ([], [])	thatBackwards	-- We'll f
 		helper (ts, ps) (t, x)
 			| needsUpdate && keepGoing	= (updated:ts, point:ps)		-- Update terrain, collect point for next update
 			| needsUpdate				= (updated:ts, ps)				-- Update terrain, don't bother collecting point
-			| otherwise					= (ts, ps)						-- No changes
+			| otherwise					= (t:ts, ps)					-- No changes, pass the point unmodified
 				where
 					point = (x, y)
 					needsUpdate = Set.member point toUpdate
 					(updated, keepGoing) = f t
-		
+	
 -- Update all the terrain with the given update function, collect the coords of squares that we need to keep working with
 updateTerrain :: (Terrain -> (Terrain, Bool)) -> Set.Set Point -> Map -> (Map, [Point])
 updateTerrain f toUpdate m
