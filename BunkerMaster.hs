@@ -84,8 +84,8 @@ canWall _						= False
 
 -- Figure out if the bugs can walk on a square
 bugCrossable Unreliable	= True
-bugCrossable Reliable		= True
-bugCrossable _				= False
+bugCrossable Reliable	= True
+bugCrossable _			= False
 
 -- Figure out if the humans can walk on a square
 humanCrossable	Reliable	= True
@@ -106,6 +106,18 @@ neighbors :: Map -> Point -> [Point]
 neighbors m (x, y) = [ (x + i, y + j) | i <- [-1,1], j <- [-1,1], validPoint size (x + i, y + j) ]
 	where
 		size = findMapSize m
+
+-- Generate the list of squares that we need to process next round
+findPointsToProcess :: Map -> [Point] -> (Terrain -> Bool) -> (Terrain -> Bool) -> Set.Set Point
+findPointsToProcess _ [] _ _ = Set.empty							-- Nothing to check? Nothing done
+findPointsToProcess m ps walkable visited =
+		Set.filter checkPoint allNeighborsSet						-- Keep only things that are walkable and not visited
+	where
+		neighborLists	= map (neighbors m) ps							-- Generate neighbors for each point
+		allNeighborsSet	= Set.fromList $ concat neighborLists			-- Collapse that		
+		checkPoint p	= (walkable terrain) && (not . visited) terrain	-- Function to test locations
+			where 
+				terrain = findTerrain m p
 
 -- Update terrain where a bug has touched it, return the update and if we need to keep going
 bugify :: Terrain -> (Terrain, Bool)
