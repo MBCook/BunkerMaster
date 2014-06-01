@@ -71,13 +71,13 @@ canWall (Terrain Reliable _ _)	= True
 canWall _						= False
 
 -- Figure out if the bugs can walk on a square
-bugsCross (Terrain Unreliable _ _)	= True
-bugsCross (Terrain Reliable _ _)	= True
-bugsCross _							= False
+bugCrossable Unreliable	= True
+bugCrossable Reliable		= True
+bugCrossable _				= False
 
 -- Figure out if the humans can walk on a square
-humansCross	(Terrain Reliable _ _)	= True
-humansCross _						= False
+humanCrossable	Reliable	= True
+humanCrossable _			= False
 
 -- Convenience functions to start us out
 bugStart :: Map -> [Point]
@@ -94,6 +94,26 @@ neighbors :: Map -> Point -> [Point]
 neighbors m (x, y) = [ (x + i, y + j) | i <- [-1,1], j <- [-1,1], validPoint size (x + i, y + j) ]
 	where
 		size = findMapSize m
+
+-- Update terrain where a bug has touched it, return the update and if we need to keep going
+bugify :: Terrain -> (Terrain, Bool)
+bugify t@(Terrain kind buggy humany)
+	| buggy					= (t, False)							-- Already been here
+	| crossable && humany	= (t{kind = Wall, bugs = True}, False)	-- Humans have been here and it's good, wall it up
+	| crossable 			= (t{bugs = True}, True)				-- No humans but we can cross, so do it
+	| otherwise				= (t, False)							-- Can't cross, don't bother
+	where
+		crossable = bugCrossable kind
+
+-- Update terrain where a bug has touched it, return the update and if we need to keep going
+humanize :: Terrain -> (Terrain, Bool)
+humanize t@(Terrain kind buggy humany)
+	| humany				= (t, False)								-- Already been here
+	| crossable && buggy	= (t{kind = Wall, humans = True}, False)	-- Bugs have been here and it's good, wall it up
+	| crossable 			= (t{humans = True}, True)					-- No bugs but we can cross, so do it
+	| otherwise				= (t, False)								-- Can't cross, don't bother
+	where
+		crossable = humanCrossable kind
 
 ------------------ Our main function, to do the work ------------------
 
