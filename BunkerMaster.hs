@@ -144,7 +144,9 @@ updateTerrainRow f toUpdate t y = foldl helper ([], [])	thatBackwards	-- We'll f
 		
 -- Update all the terrain with the given update function, collect the coords of squares that we need to keep working with
 updateTerrain :: (Terrain -> (Terrain, Bool)) -> Set.Set Point -> Map -> (Map, [Point])
-updateTerrain f toUpdate map = foldl helper ([], []) thatBackwards		-- We'll fold over the rows to do the updates
+updateTerrain f toUpdate map
+	| Set.null toUpdate	= (map, [])										-- Nothing to update? No changes
+	| otherwise			= foldl helper ([], []) thatBackwards			-- We'll fold over the rows to do the updates
 	where
 		withRowNumbers			= zip map [1,2..]						-- Convert the map to [([Terrain], Int)]
 		thatBackwards			= reverse withRowNumbers				-- Reverse that because our foldl will reverse it again
