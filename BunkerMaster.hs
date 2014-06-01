@@ -99,10 +99,6 @@ filterVisited f m (p:ps)
 	| f $ findTerrain m p	= p : filterVisited f m ps
 	| otherwise				= filterVisited f m ps
 
--- Figure out if we can place a wall on a square
-canWall (Terrain Reliable _ _)	= True
-canWall _						= False
-
 -- Figure out if the bugs can walk on a square
 bugCrossable Unreliable	= True
 bugCrossable Reliable	= True
