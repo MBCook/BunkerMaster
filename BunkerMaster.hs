@@ -1,6 +1,16 @@
 -- A program to take figure out how to protect humans for horrible termites
 -- Challenge from: http://www.reddit.com/r/dailyprogrammer/comments/26oop1/5282014_challenge_164_intermediate_part_3_protect/
 
+-- We're going to use a kind of flood fill from each 'base', marking the meeting points as walls
+--
+-- 1. Generate list of squares occupied by termites and humans
+-- 2. Find their neighbors that they are allowed to walk on
+-- 3. Mark them as visited by that kind
+-- 4. If both have visited mark it a wall and remove it from the list of squares we're working on
+-- 5. Go to #2
+--
+-- At the end, we should have a dividing wall, but it may not be the smallest necessary
+
 import qualified Data.Set as Set
 
 ------------------ Some types we'll use ------------------
