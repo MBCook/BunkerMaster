@@ -1,10 +1,5 @@
--- A program to take line segments in and find intersections fast
--- Challenge from: http://thirdpartyninjas.com/blog/2008/10/07/line-segment-intersection/
--- Intersection algorithm from: http://stackoverflow.com/a/565282/786339
-
-import Data.Maybe						-- To make Maybe handling easier
-import Data.List						-- So we can sort
-import System.IO						-- For file loading
+-- A program to take figure out how to protect humans for horrible termites
+-- Challenge from: http://www.reddit.com/r/dailyprogrammer/comments/26oop1/5282014_challenge_164_intermediate_part_3_protect/
 
 ------------------ Some types we'll use ------------------
 
@@ -53,15 +48,14 @@ validPoint (MapSize w h) (x, y)
 	| x > w || y > h	= False
 	| otherwise			= True
 
-parseTerrain :: Char -> Maybe Terrain
+parseTerrain :: Char -> Terrain
 parseTerrain c = case c of
-					'*'	-> Just $ Terrain Nest True False
-					'#'	-> Just $ Terrain Impassible False False
-					'+'	-> Just $ Terrain Unreliable False False
-					'-'	-> Just $ Terrain Reliable False False
-					'o'	-> Just $ Terrain Bunker False True
-					'@'	-> Just $ Terrain Wall True True
-					_	-> Nothing
+					'*'	-> Terrain Nest True False
+					'#'	-> Terrain Impassible False False
+					'+'	-> Terrain Unreliable False False
+					'-'	-> Terrain Reliable False False
+					'o'	-> Terrain Bunker False True
+					'@'	-> Terrain Wall True True
 
 -- Given a function to test a terrain type and a row and it's Y index generate the coords of matching squares
 findLocationsInRow :: (TerrainType -> Bool) -> [Terrain] -> Int -> [Point]
