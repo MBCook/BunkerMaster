@@ -25,7 +25,7 @@ data Terrain = Terrain {
 					humans :: Bool
 				}
 
-data MapSize = MapSize Int Int
+data MapSize = MapSize Int Int deriving Show
 
 type Point = (Int, Int)
 
@@ -82,7 +82,7 @@ parseMap s = map lineToTerrain otherLines
 
 -- Given a function to test a terrain type and a row and it's Y index generate the coords of matching squares
 findLocationsInRow :: (TerrainType -> Bool) -> [Terrain] -> Int -> [Point]
-findLocationsInRow f r i = [ (x + 1, i) | x <- [0,1..(length r)], f . kind $ r !! x ]
+findLocationsInRow f r i = [ (x + 1, i) | x <- [0,1..((length r) - 1)], f . kind $ r !! x ]
 
 -- Find all matching locations in a map. Use zipWith to generate a list of lists of points, concat to join it together
 findLocations :: (TerrainType -> Bool) -> Map -> [Point]
@@ -124,7 +124,7 @@ wallLocations = findLocations ((==) Wall)
 
 -- Find the neighboring cells
 neighbors :: Map -> Point -> [Point]
-neighbors m (x, y) = [ (x + i, y + j) | i <- [-1,1], j <- [-1,1], validPoint size (x + i, y + j) ]
+neighbors m (x, y) = [ (x + i, y + j) | i <- [-1,0,1], j <- [-1,0,1], ((abs i) + (abs j) == 1) && validPoint size (x + i, y + j) ]
 	where
 		size = findMapSize m
 
@@ -177,15 +177,40 @@ updateTerrainRow f toUpdate t y = foldl helper ([], [])	thatBackwards	-- We'll f
 		
 -- Update all the terrain with the given update function, collect the coords of squares that we need to keep working with
 updateTerrain :: (Terrain -> (Terrain, Bool)) -> Set.Set Point -> Map -> (Map, [Point])
-updateTerrain f toUpdate map
-	| Set.null toUpdate	= (map, [])										-- Nothing to update? No changes
-	| otherwise			= foldl helper ([], []) thatBackwards			-- We'll fold over the rows to do the updates
+updateTerrain f toUpdate m
+	| Set.null toUpdate	= (m, [])									-- Nothing to update? No changes
+	| otherwise			= foldl helper ([], []) thatBackwards		-- We'll fold over the rows to do the updates
 	where
-		withRowNumbers			= zip map [1,2..]						-- Convert the map to [([Terrain], Int)]
-		thatBackwards			= reverse withRowNumbers				-- Reverse that because our foldl will reverse it again
+		withRowNumbers			= zip m [1,2..]						-- Convert the map to [([Terrain], Int)]
+		thatBackwards			= reverse withRowNumbers			-- Reverse that because our foldl will reverse it again
 		helper (rs, ps) (r, y) = (updatedRow:rs, additionalPoints ++ ps)
 			where
 				(updatedRow, additionalPoints) = updateTerrainRow f toUpdate r y
+
+-- Given a map, solve it by bootstrapping into the actual iterate map function
+solveMap :: Map -> Map
+solveMap m = solved
+	where
+		humanPoints = humanStart m
+		bugPoints = bugStart m
+		(solved, _, _) = iterateMap m humanPoints bugPoints
+		
+
+-- Run an iteration of the map solving code
+iterateMap :: Map -> [Point] -> [Point] -> (Map, [Point], [Point])
+iterateMap m [] []	= (m, [], [])
+iterateMap m h b	= iterateMap m'' h' b'
+	where
+		humansToCheck	= findPointsToProcess m h (humanCrossable . kind) humans	-- Find the various points to check
+		bugsToCheck		= findPointsToProcess m b (bugCrossable . kind) bugs
+		(m', h')		= updateTerrain humanize humansToCheck m					-- Update the terrain for humans
+		(m'', b')		= updateTerrain bugify bugsToCheck m'
+
+-- Get a map from a file
+loadMap :: String -> IO Map
+loadMap f = do
+			fileText <- readFile f
+			return $ parseMap fileText
 
 ------------------ Our main function, to do the work ------------------
 
@@ -194,12 +219,16 @@ main = do
 	
 	putStrLn $ "Loading map from " ++ args !! 0
 	
-	fileText <- readFile $ args !! 0
+	m <- loadMap $ args !! 0
 	
-	putStrLn "Parsing the map..."
+	putStrLn "Here is what we think the map looks like:\n"
 	
-	let map = parseMap fileText
+	putStrLn $ showMap m
 	
-	putStrLn "Here is what we think the map looks like:"
+	putStrLn "Solving the map..."
 	
-	putStrLn $ showMap map
+	let solvedMap = solveMap m
+	
+	putStrLn "Solution looks like this:"
+	
+	putStrLn $ showMap solvedMap
