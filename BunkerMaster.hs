@@ -12,6 +12,8 @@
 -- At the end, we should have a dividing wall, but it may not be the smallest necessary
 
 import qualified Data.Set as Set
+import System.Environment
+import Data.Char
 
 ------------------ Some types we'll use ------------------
 
@@ -60,6 +62,7 @@ validPoint (MapSize w h) (x, y)
 	| x > w || y > h	= False
 	| otherwise			= True
 
+-- Function to turn characters into terrain tiles
 parseTerrain :: Char -> Terrain
 parseTerrain c = case c of
 					'*'	-> Terrain Nest True False
@@ -68,6 +71,14 @@ parseTerrain c = case c of
 					'-'	-> Terrain Reliable False False
 					'o'	-> Terrain Bunker False True
 					'@'	-> Terrain Wall True True
+
+-- Function to take a string in lines (first line height, width, rest rows) and map a map
+parseMap :: String -> Map
+parseMap s = map lineToTerrain otherLines
+	where
+		cleanString = reverse $ dropWhile isSpace $ reverse s	-- Remove whitespace at the end
+		(_:otherLines) = lines cleanString						-- Ignore the first line, we don't care
+		lineToTerrain = map parseTerrain						-- Function to trun a string into a terrain line
 
 -- Given a function to test a terrain type and a row and it's Y index generate the coords of matching squares
 findLocationsInRow :: (TerrainType -> Bool) -> [Terrain] -> Int -> [Point]
@@ -179,4 +190,16 @@ updateTerrain f toUpdate map
 ------------------ Our main function, to do the work ------------------
 
 main = do
-	putStrLn "Nothing"
+	args <- getArgs
+	
+	putStrLn $ "Loading map from " ++ args !! 0
+	
+	fileText <- readFile $ args !! 0
+	
+	putStrLn "Parsing the map..."
+	
+	let map = parseMap fileText
+	
+	putStrLn "Here is what we think the map looks like:"
+	
+	putStrLn $ showMap map
