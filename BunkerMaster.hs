@@ -225,8 +225,10 @@ main = do
 	
 	putStrLn "Solving the map..."
 	
-	let solvedMap = solveMap m
+	solvedMap <- return $ solveMap m
 	
 	putStrLn "Solution looks like this:"
 	
 	putStrLn $ showMap solvedMap
+	
+	putStrLn $ "We placed " ++ (show $ length $ wallLocations solvedMap) ++ " walls"
