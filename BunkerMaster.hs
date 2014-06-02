@@ -99,14 +99,14 @@ filterVisited f m (p:ps)
 	| f $ findTerrain m p	= p : filterVisited f m ps
 	| otherwise				= filterVisited f m ps
 
--- Figure out if the bugs can walk on a square
-bugCrossable Unreliable	= True
-bugCrossable Reliable	= True
-bugCrossable _			= False
+-- Figure out if the terrain is crossable
+crossable Unreliable	= True
+crossable Reliable		= True
+crossable _				= False
 
--- Figure out if the humans can walk on a square
-humanCrossable	Reliable	= True					-- This is causing problems, humans can get boxed in by +s
-humanCrossable _			= False
+-- Figure out if the terrain is wallable
+wallable Reliable	= True
+wallable _			= False
 
 -- Convenience functions to find locations
 bugStart :: Map -> [Point]
@@ -140,21 +140,23 @@ findPointsToProcess m ps walkable visited =
 bugify :: Terrain -> (Terrain, Bool)
 bugify t@(Terrain kind buggy humany)
 	| buggy					= (t, False)							-- Already been here
-	| crossable && humany	= (t{kind = Wall, bugs = True}, False)	-- Humans have been here and it's good, wall it up
-	| crossable 			= (t{bugs = True}, True)				-- No humans but we can cross, so do it
+	| isWallable && humany	= (t{kind = Wall, bugs = True}, False)	-- Humans have been here and it's good, wall it up
+	| isCrossable 			= (t{bugs = True}, True)				-- No humans but we can cross, so do it
 	| otherwise				= (t, False)							-- Can't cross, don't bother
 	where
-		crossable = bugCrossable kind
+		isCrossable 	= crossable kind
+		isWallable		= wallable kind
 
 -- Update terrain where a bug has touched it, return the update and if we need to keep going
 humanize :: Terrain -> (Terrain, Bool)
 humanize t@(Terrain kind buggy humany)
 	| humany				= (t, False)								-- Already been here
-	| crossable && buggy	= (t{kind = Wall, humans = True}, False)	-- Bugs have been here and it's good, wall it up
-	| crossable 			= (t{humans = True}, True)					-- No bugs but we can cross, so do it
+	| isWallable && buggy	= (t{kind = Wall, humans = True}, False)	-- Bugs have been here and it's good, wall it up
+	| isCrossable 			= (t{humans = True}, True)					-- No bugs but we can cross, so do it
 	| otherwise				= (t, False)								-- Can't cross, don't bother
 	where
-		crossable = humanCrossable kind
+		isCrossable 	= crossable kind
+		isWallable		= wallable kind
 
 -- Update points in the set with the given function collecting coords of updated squares that need continued processing
 updateTerrainRow :: (Terrain -> (Terrain, Bool)) -> Set.Set Point -> [Terrain] -> Int -> ([Terrain], [Point])
@@ -197,11 +199,10 @@ iterateMap :: Map -> [Point] -> [Point] -> (Map, [Point], [Point])
 iterateMap m [] []	= (m, [], [])
 iterateMap m h b	= iterateMap m'' h' b'
 	where
-		humansToCheck	= findPointsToProcess m h (humanCrossable . kind) humans	-- Find the various points to check
-		bugsToCheck		= findPointsToProcess m b (bugCrossable . kind) bugs
-		realBugsToCheck	= Set.difference bugsToCheck humansToCheck					-- Don't have both check the same spots
-		(m', h')		= updateTerrain humanize humansToCheck m					-- Update the terrain for humans
-		(m'', b')		= updateTerrain bugify realBugsToCheck m'					-- Yes, I know this is state monad territory
+		humansToCheck	= findPointsToProcess m h (crossable . kind) humans		-- Find the various points to check
+		bugsToCheck		= findPointsToProcess m b (crossable . kind) bugs
+		(m', h')		= updateTerrain humanize humansToCheck m				-- Update the terrain for humans
+		(m'', b')		= updateTerrain bugify bugsToCheck m'					-- Yes, I know this is state monad territory
 
 -- Get a map from a file
 loadMap :: String -> IO Map
