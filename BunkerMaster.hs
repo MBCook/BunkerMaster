@@ -199,8 +199,9 @@ iterateMap m h b	= iterateMap m'' h' b'
 	where
 		humansToCheck	= findPointsToProcess m h (humanCrossable . kind) humans	-- Find the various points to check
 		bugsToCheck		= findPointsToProcess m b (bugCrossable . kind) bugs
+		realBugsToCheck	= Set.difference bugsToCheck humansToCheck					-- Don't have both check the same spots
 		(m', h')		= updateTerrain humanize humansToCheck m					-- Update the terrain for humans
-		(m'', b')		= updateTerrain bugify bugsToCheck m'
+		(m'', b')		= updateTerrain bugify realBugsToCheck m'					-- Yes, I know this is state monad territory
 
 -- Get a map from a file
 loadMap :: String -> IO Map
